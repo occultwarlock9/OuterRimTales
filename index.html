@@ -340,72 +340,153 @@ body.editing .card .rowtools,body.editing .entry .rowtools,body.editing .tile .r
    CAMPAIGN DATA — edit below. Everything else is the interface.
    ============================================================ */
 const DATA = {
-  home: {
-    label: "Home",
-    layout: "home",
-    tiles: [
-      { pid:"outer-rim-tales", size:"feature", footL:"Ongoing", footR:"View campaign" },
-      { pid:"ghosts-of-utapau", footL:"1 session", footR:"3 seats open" },
-      { pid:"kessa-descent", footL:"3 sessions", footR:"2 seats open" },
-      { pid:"the-archive", footL:"Database", footR:"Browse" }
+  "home": {
+    "label": "Home",
+    "layout": "home",
+    "tiles": [
+      {
+        "pid": "outer-rim-tales",
+        "size": "feature",
+        "footL": "Ongoing",
+        "footR": "View campaign"
+      },
+      {
+        "pid": "ghosts-of-utapau",
+        "footL": "1 session",
+        "footR": "3 seats open"
+      },
+      {
+        "pid": "kessa-descent",
+        "footL": "3 sessions",
+        "footR": "2 seats open"
+      },
+      {
+        "pid": "the-archive",
+        "footL": "Database",
+        "footR": "Browse"
+      }
     ]
   },
-  campaigns: {
-    label: "Campaigns",
-    layout: "campaigns",
-    groups: [
-      { title:"Current campaign",
-        entries:[ { pid:"outer-rim-tales", size:"feature", footL:"Ongoing", footR:"3 players" } ] },
-      { title:"Side campaigns",
-        entries:[
-          { pid:"kessa-descent", footL:"3 sessions", footR:"2 seats open" },
-          { pid:"ghosts-of-utapau", footL:"1 session", footR:"3 seats open" }
-        ] }
+  "campaigns": {
+    "label": "Campaigns",
+    "layout": "campaigns",
+    "groups": [
+      {
+        "title": "Current campaign",
+        "entries": [
+          {
+            "pid": "outer-rim-tales",
+            "size": "feature",
+            "footL": "Ongoing",
+            "footR": "3 players"
+          }
+        ]
+      },
+      {
+        "title": "Side campaigns",
+        "entries": [
+          {
+            "pid": "kessa-descent",
+            "footL": "3 sessions",
+            "footR": "2 seats open"
+          },
+          {
+            "pid": "ghosts-of-utapau",
+            "footL": "1 session",
+            "footR": "3 seats open"
+          }
+        ]
+      }
     ]
   },
-  characters: {
-    label: "Characters",
-    filterKey: "status",
-    items: [
-      { name:"Obi-Wan Kenobi", eyebrow:"Human · Jedi Guardian", status:"Active", player:"Ben",
-        blurb:"Padawan to Qui-Gon Jinn, later General of the Republic. Prefers the argument to the duel, and wins both.",
-        stats:{ Level:"7", Credits:"0", Sessions:"12" },
-        notes:"Trained from infancy in the Coruscant temple and assigned to Qui-Gon Jinn at thirteen, over the Master's objection. Holds rank without enjoying it. Reads a room before he draws, and has talked his way out of more corners than he has cut through.\n\nCarries his master's lightsaber alongside his own. Will not say why.",
-        links:[ {label:"Character sheet", url:"#"} ] },
-      { name:"Qui-Gon Jinn", eyebrow:"Human · Jedi Master · NPC", status:"Active",
-        blurb:"Reads the living Force over the Council's instructions. Vouches for the party when nobody else will.",
-        stats:{ Level:"12", Credits:"0", Sessions:"4" },
-        notes:"Operates at the edge of the Order's tolerance and has been passed over for the Council more than once. Takes the long view on people, which is why the party still has a patron after everything they have done."}
+  "characters": {
+    "label": "Characters",
+    "filterKey": "status",
+    "items": [
+      {
+        "name": "Obi-Wan Kenobi",
+        "eyebrow": "Human · Jedi Guardian",
+        "status": "Active",
+        "player": "Ben",
+        "blurb": "Padawan to Qui-Gon Jinn, later General of the Republic. Prefers the argument to the duel, and wins both.",
+        "stats": {
+          "Level": "7",
+          "Credits": "0",
+          "Sessions": "12"
+        },
+        "notes": "Trained from infancy in the Coruscant temple and assigned to Qui-Gon Jinn at thirteen, over the Master's objection. Holds rank without enjoying it. Reads a room before he draws, and has talked his way out of more corners than he has cut through.\n\nCarries his master's lightsaber alongside his own. Will not say why.",
+        "links": [
+          {
+            "label": "Character sheet",
+            "url": "#"
+          }
+        ]
+      },
+      {
+        "name": "Qui-Gon Jinn",
+        "eyebrow": "Human · Jedi Master · NPC",
+        "status": "Active",
+        "blurb": "Reads the living Force over the Council's instructions. Vouches for the party when nobody else will.",
+        "stats": {
+          "Level": "12",
+          "Credits": "0",
+          "Sessions": "4"
+        },
+        "notes": "Operates at the edge of the Order's tolerance and has been passed over for the Council more than once. Takes the long view on people, which is why the party still has a patron after everything they have done."
+      }
     ]
   },
-  locations: {
-    label: "Locations",
-    filterKey: "state",
-    items: [
-      { name:"The Jundland Wastes", eyebrow:"Tatooine · Northern Dune Sea", state:"Charted",
-        blurb:"Broken canyon country above the Lars homestead. Sand People travel single file to hide their numbers.",
-        stats:{ Sector:"Arkanis", Danger:"3" },
-        notes:"Wind-cut canyon country running north from the Lars moisture farm. Krayt dragon calls carry for kilometres and are worth learning to imitate.\n\nTusken raiding parties work the ridgelines at dawn and dusk. They travel single file, so a track of four could be a band of twenty.",
-        links:[ {label:"Sector map", url:"#"} ] }
+  "locations": {
+    "label": "Locations",
+    "filterKey": "state",
+    "items": [
+      {
+        "name": "The Jundland Wastes",
+        "eyebrow": "Tatooine · Northern Dune Sea",
+        "state": "Charted",
+        "blurb": "Broken canyon country above the Lars homestead. Sand People travel single file to hide their numbers.",
+        "stats": {
+          "Sector": "Arkanis",
+          "Danger": "3"
+        },
+        "notes": "Wind-cut canyon country running north from the Lars moisture farm. Krayt dragon calls carry for kilometres and are worth learning to imitate.\n\nTusken raiding parties work the ridgelines at dawn and dusk. They travel single file, so a track of four could be a band of twenty.",
+        "links": [
+          {
+            "label": "Sector map",
+            "url": "#"
+          }
+        ]
+      }
     ]
   }
 };
 
-/* Pages behind the home tiles and campaign entries.
-   "featured" shows the Featured badge on the Campaigns tab only. */
 const PAGES = {
-  "outer-rim-tales":{
-    title:"Outer Rim Tales", eyebrow:"West Marches · Ongoing", featured:true,
-    blurb:"An open table on the fringe of Imperial space. Players form a crew each session, take a job, and bring back whatever they can carry. The roster and the charted map live in the archive." },
-  "ghosts-of-utapau":{
-    title:"Ghosts of Utapau", eyebrow:"One-shot · Single session", featured:true, recruiting:true,
-    blurb:"A sealed sinkhole city. A beacon on a dead frequency, and four hours to answer it." },
-  "kessa-descent":{
-    title:"The Kessa Descent", eyebrow:"Mini campaign · Three sessions", featured:true, recruiting:true,
-    blurb:"A short arc beneath the jungle ruins. Pre-made characters provided, no prior sessions required." },
-  "the-archive":{
-    title:"The Archive", eyebrow:"Records",
-    blurb:"Characters, contacts, and charted worlds. Everything the table has established so far." }
+  "outer-rim-tales": {
+    "title": "Outer Rim Tales",
+    "eyebrow": "West Marches · Ongoing",
+    "featured": true,
+    "blurb": "An open table on the fringe of Imperial space. Players form a crew each session, take a job, and bring back whatever they can carry. The roster and the charted map live in the archive."
+  },
+  "ghosts-of-utapau": {
+    "title": "Ghosts of Utapau",
+    "eyebrow": "One-shot · Single session",
+    "featured": true,
+    "recruiting": true,
+    "blurb": "A sealed sinkhole city. A beacon on a dead frequency, and four hours to answer it."
+  },
+  "kessa-descent": {
+    "title": "The Kessa Descent",
+    "eyebrow": "Mini campaign · Three sessions",
+    "blurb": "A short arc beneath the jungle ruins.",
+    "featured": true,
+    "recruiting": true
+  },
+  "the-archive": {
+    "title": "The Archive",
+    "eyebrow": "Records",
+    "blurb": "Characters, contacts, and charted worlds. Everything the table has established so far."
+  }
 };
 /* ========================= end data ========================= */
 
