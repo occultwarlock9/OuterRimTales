@@ -431,6 +431,7 @@ body.editing .card .rowtools,body.editing .entry .rowtools,body.editing .tile .r
 
   <div class="editbar">
     <button class="ebtn" id="addBtn">+ New record</button>
+    <button class="ebtn" id="addCampBtn">+ New campaign</button>
     <button class="ebtn" id="pubBtn">Publish to GitHub</button>
     <button class="ebtn ghost" id="dlBtn">Download file</button>
     <button class="ebtn ghost" id="lockBtn">Lock</button>
@@ -795,14 +796,21 @@ function metaLine(i,secKey){
   return '';
 }
 
+// A placement may carry its own `img`, which wins over the shared PAGES image.
+// `t.img === ''` is meaningful: it means "show no image in this spot".
+function tileImage(t,p){
+  return (t && t.img!==undefined) ? t.img : (p.img||'');
+}
+
 function tileHTML(t,isCampaigns,scope){
   const p=PAGES[t.pid]||{};
+  const bg=tileImage(t,p);
   const tags=[];
   if(isCampaigns&&p.featured)tags.push('Featured');
   if(p.upcoming)tags.push('Upcoming');
   if(p.recruiting)tags.push('Recruiting');
   return `<button class="tile ${t.size==='feature'?'feature':''}" data-page="${t.pid}">
-    ${p.img?`<span class="bgimg" style="background-image:url('${p.img}')"></span>`:''}
+    ${bg?`<span class="bgimg" style="background-image:url('${bg}')"></span>`:''}
     <span class="tiletools rowtools"><span class="tbtn" data-act="page" data-pid="${t.pid}" data-scope="${scope||''}">Edit tile</span></span>
     ${tags.length?`<span class="tags">${tags.map(x=>`<span class="tag">${x}</span>`).join('')}</span>`:''}
     <span class="aur">${p.aur||p.title}</span>
@@ -1238,6 +1246,84 @@ function tileFromScope(scope){
   return null;
 }
 
+// Build a URL-safe, readable id from a title, kept unique against PAGES.
+function makePid(title){
+  let base=(title||'campaign').toLowerCase()
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'campaign';
+  let pid=base,k=2;
+  while(PAGES[pid])pid=`${base}-${k++}`;
+  return pid;
+}
+
+// New campaigns are a Campaigns-tab concern only; the home page is curated
+// by hand and is never touched here.
+function newCampaignForm(){
+  const groups=(DATA.campaigns&&DATA.campaigns.groups)||[];
+  if(!groups.length){alert('No campaign groups exist to add to.');return}
+  const defaultGroup=Math.min(1,groups.length-1);   // prefer "Side campaigns"
+  openSheet(`
+    <h2>New campaign</h2>
+    <p class="hint">Added to the Campaigns tab. The home page is left alone.</p>
+    <div class="field"><label>Title</label><input id="n_title" placeholder="Coruscant Guard"></div>
+    <div class="field"><label>Subtitle</label><input id="n_eyebrow" placeholder="One shot · Upcoming"></div>
+    <div class="field"><label>Description</label><textarea id="n_blurb"></textarea></div>
+    <div class="field"><label>Group</label>
+      <select id="n_group">${groups.map((g,i)=>
+        `<option value="${i}" ${i===defaultGroup?'selected':''}>${g.title}</option>`).join('')}</select></div>
+    <div class="trio">
+      <div class="field"><label>Footer left</label><input id="n_footL" placeholder="1 session"></div>
+      <div class="field"><label>Footer right</label><input id="n_footR" placeholder="3 seats open"></div>
+    </div>
+    <div class="field"><label>Badges</label>
+      <div class="toggles">
+        <label class="tog"><input type="checkbox" id="n_up"> Upcoming</label>
+        <label class="tog"><input type="checkbox" id="n_rec"> Recruiting</label>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="ebtn" id="nSave">Create campaign</button>
+      <button class="ebtn ghost" id="nCancel">Cancel</button>
+    </div>
+    <p class="note">You can add a thumbnail straight after, from the tile's Edit control.</p>`);
+  document.getElementById('nCancel').onclick=closeSheet;
+  document.getElementById('nSave').onclick=()=>{
+    const v=id=>document.getElementById(id).value.trim();
+    const title=v('n_title');
+    if(!title){alert('A title is required.');return}
+    const pid=makePid(title);
+    PAGES[pid]={
+      title, eyebrow:v('n_eyebrow'), blurb:v('n_blurb'),
+      ...(document.getElementById('n_up').checked?{upcoming:true}:{}),
+      ...(document.getElementById('n_rec').checked?{recruiting:true}:{})
+    };
+    const gi=+document.getElementById('n_group').value;
+    const entry={pid};
+    if(v('n_footL'))entry.footL=v('n_footL');
+    if(v('n_footR'))entry.footR=v('n_footR');
+    groups[gi].entries.push(entry);
+    markDirty(); closeSheet(); render();
+  };
+}
+
+// Remove a campaign from the Campaigns tab. The shared page record is only
+// discarded once nothing else points at it, so a home tile can never be orphaned.
+function removeCampaign(scope,pid){
+  const parts=String(scope||'').split(':');
+  if(parts[0]!=='camp')return;
+  const groups=(DATA.campaigns&&DATA.campaigns.groups)||[];
+  const g=groups[+parts[1]]; if(!g)return;
+  const title=(PAGES[pid]&&PAGES[pid].title)||pid;
+  if(!confirm(`Remove "${title}" from the Campaigns tab?`))return;
+  g.entries.splice(+parts[2],1);
+
+  const stillUsed=
+    ((DATA.home&&DATA.home.tiles)||[]).some(t=>t.pid===pid) ||
+    groups.some(gr=>gr.entries.some(e=>e.pid===pid));
+  if(!stillUsed)delete PAGES[pid];
+
+  markDirty(); closeSheet(); render();
+}
+
 function pageForm(pid,scope){
   const p=PAGES[pid]||{};
   const tile=tileFromScope(scope)||{};
@@ -1253,8 +1339,12 @@ function pageForm(pid,scope){
       <div class="field"><label>Footer left</label><input id="p_footL" value="${esc(tile.footL)}" placeholder="3 sessions"></div>
       <div class="field"><label>Footer right</label><input id="p_footR" value="${esc(tile.footR)}" placeholder="2 seats open"></div>
     </div>
-    <div class="field"><label>Background image URL</label><input id="p_img" value="${esc(p.img)}" placeholder="https://…"></div>
-    <div class="field"><label>Or upload an image</label><input type="file" id="p_file" accept="image/*"></div>
+    <div class="field"><label>Thumbnail — this placement only</label>
+      <input id="p_timg" value="${tile.img!==undefined?esc(tile.img):''}" placeholder="Leave blank to use the shared thumbnail">
+      <p class="note">Applies to this tile alone, so the Campaigns tab and the home page can differ.</p></div>
+    <div class="field"><label>Upload a thumbnail for this placement</label><input type="file" id="p_file" accept="image/*"></div>
+    <div class="field"><label>Shared thumbnail</label>
+      <input id="p_img" value="${esc(p.img)}" placeholder="Used wherever no placement thumbnail is set"></div>
     <div class="field"><label>Badges</label>
       <div class="toggles">
         <label class="tog"><input type="checkbox" id="p_feat" ${p.featured?'checked':''}> Featured</label>
@@ -1264,10 +1354,11 @@ function pageForm(pid,scope){
     </div>
     <div class="actions">
       <button class="ebtn" id="pgSave">Save tile</button>
-      <button class="ebtn ghost" id="pgClear">Remove image</button>
+      <button class="ebtn ghost" id="pgClear">Clear thumbnail</button>
+      ${String(scope||'').startsWith('camp:')?'<button class="ebtn ghost" id="pgDel">Remove campaign</button>':''}
       <button class="ebtn ghost" id="pgCancel">Cancel</button>
     </div>
-    <p class="note" id="pgMsg">Uploaded images are scaled down and stored inside the page file.</p>`);
+    <p class="note" id="pgMsg">Uploaded thumbnails are scaled down, then moved into images/ when you publish.</p>`);
   const msg=document.getElementById('pgMsg');
   document.getElementById('p_file').onchange=e=>{
     const f=e.target.files[0]; if(!f)return;
@@ -1279,7 +1370,7 @@ function pageForm(pid,scope){
       c.width=Math.round(img.width*sc); c.height=Math.round(img.height*sc);
       c.getContext('2d').drawImage(img,0,0,c.width,c.height);
       const data=c.toDataURL('image/jpeg',0.72);
-      document.getElementById('p_img').value=data;
+      document.getElementById(scope?'p_timg':'p_img').value=data;
       msg.textContent='Image ready. '+Math.round(data.length/1400)+' KB once saved.';
       URL.revokeObjectURL(img.src);
     };
@@ -1287,7 +1378,12 @@ function pageForm(pid,scope){
     img.src=URL.createObjectURL(f);
   };
   document.getElementById('pgCancel').onclick=closeSheet;
-  document.getElementById('pgClear').onclick=()=>{document.getElementById('p_img').value='';msg.textContent='Image cleared. Save to apply.'};
+  document.getElementById('pgClear').onclick=()=>{
+    document.getElementById(scope?'p_timg':'p_img').value='';
+    msg.textContent='Thumbnail cleared. Save to apply.';
+  };
+  const delBtn=document.getElementById('pgDel');
+  if(delBtn)delBtn.onclick=()=>removeCampaign(scope,pid);
   document.getElementById('pgSave').onclick=()=>{
     const v=id=>document.getElementById(id).value.trim();
     PAGES[pid]={
@@ -1303,6 +1399,9 @@ function pageForm(pid,scope){
       const L=v('p_footL'), R=v('p_footR');
       if(L)t.footL=L; else delete t.footL;
       if(R)t.footR=R; else delete t.footR;
+      // an empty placement field means "inherit the shared thumbnail"
+      const ti=v('p_timg');
+      if(ti)t.img=ti; else delete t.img;
     }
     markDirty(); closeSheet(); render();
   };
@@ -1383,27 +1482,52 @@ async function externaliseImages(tok,progress){
   const files=[];
   const seen=new Set();
   let n=0;
+
+  // Pull one embedded data-URL out to images/ and hand back its new path.
+  // `hint` only shapes the filename, so files stay readable in the repo.
+  function extract(value,hint){
+    if(typeof value!=='string'||!value.startsWith('data:'))return null;
+    const m=value.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.*)$/s);
+    if(!m)return null;
+    const ext=({'image/png':'png','image/jpeg':'jpg','image/webp':'webp','image/gif':'gif'})[m[1]]||'png';
+    let base=(hint||('img'+(++n))).toLowerCase()
+      .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'img';
+    let path=`images/${base}.${ext}`, k=2;
+    while(seen.has(path)){path=`images/${base}-${k++}.${ext}`}
+    seen.add(path);
+    files.push({path, b64:m[2]});
+    if(progress)progress(`Extracting ${path}…`);
+    return path;
+  }
+
+  // character and location holograms
   for(const secKey of Object.keys(DATA)){
     const sec=DATA[secKey];
     if(!sec.items)continue;
     for(const rec of sec.items){
-      const v=rec.holo;
-      if(typeof v!=='string')continue;
-      if(!v.startsWith('data:'))continue;               // already a path, skip
-      const m=v.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.*)$/s);
-      if(!m)continue;
-      const ext=({'image/png':'png','image/jpeg':'jpg','image/webp':'webp','image/gif':'gif'})[m[1]]||'png';
-      // stable, readable filename from the record name
-      let base=(rec.name||('holo'+(++n))).toLowerCase()
-        .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'holo';
-      let path=`images/${base}.${ext}`, k=2;
-      while(seen.has(path)){path=`images/${base}-${k++}.${ext}`}
-      seen.add(path);
-      files.push({path, b64:m[2]});
-      rec.holo=path;                                    // record now points at the file
-      if(progress)progress(`Extracting ${path}…`);
+      const p=extract(rec.holo, rec.name||'holo');
+      if(p)rec.holo=p;
     }
   }
+
+  // shared tile thumbnails
+  for(const pid of Object.keys(PAGES)){
+    const p=extract(PAGES[pid].img, (PAGES[pid].title||pid)+'-tile');
+    if(p)PAGES[pid].img=p;
+  }
+
+  // per-placement thumbnails, tagged by where they sit so they never collide
+  const placements=[
+    ...(((DATA.home&&DATA.home.tiles)||[]).map(t=>({t,where:'home'}))),
+    ...(((DATA.campaigns&&DATA.campaigns.groups)||[])
+        .flatMap(g=>(g.entries||[]).map(t=>({t,where:'campaign'}))))
+  ];
+  for(const {t,where} of placements){
+    const label=((PAGES[t.pid]&&PAGES[t.pid].title)||t.pid)+'-'+where;
+    const p=extract(t.img,label);
+    if(p)t.img=p;
+  }
+
   return files;
 }
 
@@ -1503,7 +1627,11 @@ document.getElementById('addBtn').onclick=()=>recordForm(tab,null);
 function syncAddBtn(){
   const hasItems=!!DATA[tab].items;
   document.getElementById('addBtn').style.display=hasItems?'':'none';
+  // adding campaigns belongs to the Campaigns tab and nowhere else
+  const camp=DATA[tab] && DATA[tab].layout==='campaigns' && page==null;
+  document.getElementById('addCampBtn').style.display=camp?'':'none';
 }
+document.getElementById('addCampBtn').onclick=newCampaignForm;
 document.getElementById('pubBtn').onclick=publishForm;
 document.getElementById('dlBtn').onclick=downloadFile;
 document.getElementById('lockBtn').onclick=()=>{
